@@ -1,82 +1,173 @@
 using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System;
+
+// TODO Problem 1 - Run test cases and record any defects the test code finds in the comment above the test method.
+// DO NOT MODIFY THE CODE IN THE TESTS in this file, just the comments above the tests. 
+// Fix the code being tested to match requirements and make all tests pass. 
 
 [TestClass]
-public class TakingTurnsQueue_Tests
+public class TakingTurnsQueueTests
 {
     [TestMethod]
-    // Scenario: Add a person with 3 turns. Dequeue them once.
-    // Expected Result: Person returned with 3 turns, then re-enqueued with 2 turns.
-    // Test Result: Passed ✅
-    public void SinglePerson_With_Turns_Should_Decrement()
+    // Scenario: Create a queue with the following people and turns: Bob (2), Tim (5), Sue (3) and
+    // run until the queue is empty
+    // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, Sue, Tim, Tim
+    // Defect(s) Found: The Assert.AreEqual is failing on all of these tests. The expected result is not lining up with the actual name that's coming up. This seems to be the case on all 3 of these tests
+    // The issue with this test is that the the list is not functioning like a stack, since new persons are being added to the beginning rather than the end of the list. 
+    public void TestTakingTurnsQueue_FiniteRepetition()
     {
-        var queue = new TakingTurnsQueue();
-        queue.AddPerson("Alice", 3);
+        var bob = new Person("Bob", 2);
+        var tim = new Person("Tim", 5);
+        var sue = new Person("Sue", 3);
 
-        var person = queue.GetNextPerson();
-        Assert.AreEqual("Alice", person.Name);
-        Assert.AreEqual(3, person.Turns); // First return still has 3
-        Assert.AreEqual("[(Alice:2)]", queue.ToString()); // Remaining in queue with 2 turns
+        Person[] expectedResult = [bob, tim, sue, bob, tim, sue, tim, sue, tim, tim];
+
+        var players = new TakingTurnsQueue();
+        players.AddPerson(bob.Name, bob.Turns);
+        players.AddPerson(tim.Name, tim.Turns);
+        players.AddPerson(sue.Name, sue.Turns);
+
+        int i = 0;
+        while (players.Length > 0)
+        {
+            if (i >= expectedResult.Length)
+            {
+                Assert.Fail("Queue should have ran out of items by now.");
+            }
+
+            var person = players.GetNextPerson();
+            Assert.AreEqual(expectedResult[i].Name, person.Name);
+            i++;
+        }
     }
 
     [TestMethod]
-    // Scenario: Add a person with infinite turns (0 turns).
-    // Expected Result: Person should stay in the queue and be re-enqueued after every turn.
-    // Test Result: Passed ✅
-    public void InfiniteTurns_Should_Stay_In_Queue()
+    // Scenario: Create a queue with the following people and turns: Bob (2), Tim (5), Sue (3)
+    // After running 5 times, add George with 3 turns.  Run until the queue is empty.
+    // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, George, Sue, Tim, George, Tim, George
+    // Defect(s) Found: The issue with this test is that the the list is not functioning like a stack, since new persons are being added to the beginning rather than the end of the list. 
+    public void TestTakingTurnsQueue_AddPlayerMidway()
     {
-        var queue = new TakingTurnsQueue();
-        queue.AddPerson("Bob", 0);
+        var bob = new Person("Bob", 2);
+        var tim = new Person("Tim", 5);
+        var sue = new Person("Sue", 3);
+        var george = new Person("George", 3);
 
-        var person1 = queue.GetNextPerson();
-        var person2 = queue.GetNextPerson();
+        Person[] expectedResult = [bob, tim, sue, bob, tim, sue, tim, george, sue, tim, george, tim, george];
 
-        Assert.AreEqual("Bob", person1.Name);
-        Assert.AreEqual("Bob", person2.Name);
-        Assert.AreEqual("[(Bob:Forever)]", queue.ToString());
+        var players = new TakingTurnsQueue();
+        players.AddPerson(bob.Name, bob.Turns);
+        players.AddPerson(tim.Name, tim.Turns);
+        players.AddPerson(sue.Name, sue.Turns);
+
+        int i = 0;
+        for (; i < 5; i++)
+        {
+            var person = players.GetNextPerson();
+            Assert.AreEqual(expectedResult[i].Name, person.Name);
+        }
+
+        players.AddPerson("George", 3);
+
+        while (players.Length > 0)
+        {
+            if (i >= expectedResult.Length)
+            {
+                Assert.Fail("Queue should have ran out of items by now.");
+            }
+
+            var person = players.GetNextPerson();
+            Assert.AreEqual(expectedResult[i].Name, person.Name);
+
+            i++;
+        }
     }
 
     [TestMethod]
-    // Scenario: Add two people with different turn values. Ensure correct rotation and decrement.
-    // Expected Result: Proper rotation, one removed after turns expire, other remains.
-    // Test Result: Passed ✅
-    public void MultiplePeople_Should_Respect_Turns()
+    // Scenario: Create a queue with the following people and turns: Bob (2), Tim (Forever), Sue (3)
+    // Run 10 times.
+    // Expected Result: Bob, Tim, Sue, Bob, Tim, Sue, Tim, Sue, Tim, Tim
+    // Defect(s) Found: Logic had not been added for 0 and negative turns to loop forever
+    public void TestTakingTurnsQueue_ForeverZero()
     {
-        var queue = new TakingTurnsQueue();
-        queue.AddPerson("Charlie", 1); // Should be removed after one turn
-        queue.AddPerson("Dana", 2);    // Should remain with 1 after one turn
+        var timTurns = 0;
 
-        var first = queue.GetNextPerson();  // Charlie returned, not re-added
-        var second = queue.GetNextPerson(); // Dana returned, re-added with 1
+        var bob = new Person("Bob", 2);
+        var tim = new Person("Tim", timTurns);
+        var sue = new Person("Sue", 3);
 
-        Assert.AreEqual("Charlie", first.Name);
-        Assert.AreEqual("Dana", second.Name);
-        Assert.AreEqual("[(Dana:1)]", queue.ToString());
+        Person[] expectedResult = [bob, tim, sue, bob, tim, sue, tim, sue, tim, tim];
+
+        var players = new TakingTurnsQueue();
+        players.AddPerson(bob.Name, bob.Turns);
+        players.AddPerson(tim.Name, tim.Turns);
+        players.AddPerson(sue.Name, sue.Turns);
+
+        for (int i = 0; i < 10; i++)
+        {
+            var person = players.GetNextPerson();
+            Assert.AreEqual(expectedResult[i].Name, person.Name);
+        }
+
+        // Verify that the people with infinite turns really do have infinite turns.
+        var infinitePerson = players.GetNextPerson();
+        Assert.AreEqual(timTurns, infinitePerson.Turns, "People with infinite turns should not have their turns parameter modified to a very big number. A very big number is not infinite.");
     }
 
     [TestMethod]
-    // Scenario: Empty queue should throw an exception on GetNextPerson().
-    // Expected Result: InvalidOperationException is thrown.
-    // Test Result: Passed ✅
-    public void EmptyQueue_Should_Throw_Exception()
+    // Scenario: Create a queue with the following people and turns: Tim (Forever), Sue (3)
+    // Run 10 times.
+    // Expected Result: Tim, Sue, Tim, Sue, Tim, Sue, Tim, Tim, Tim, Tim
+    // Defect(s) Found: Logic had not been added for 0 and negative turns to loop forever
+    public void TestTakingTurnsQueue_ForeverNegative()
     {
-        var queue = new TakingTurnsQueue();
+        var timTurns = -3;
+        var tim = new Person("Tim", timTurns);
+        var sue = new Person("Sue", 3);
 
-        Assert.ThrowsException<InvalidOperationException>(() => queue.GetNextPerson());
+        Person[] expectedResult = [tim, sue, tim, sue, tim, sue, tim, tim, tim, tim];
+
+        var players = new TakingTurnsQueue();
+        players.AddPerson(tim.Name, tim.Turns);
+        players.AddPerson(sue.Name, sue.Turns);
+
+        for (int i = 0; i < 10; i++)
+        {
+            var person = players.GetNextPerson();
+            Assert.AreEqual(expectedResult[i].Name, person.Name);
+        }
+
+        // Verify that the people with infinite turns really do have infinite turns.
+        var infinitePerson = players.GetNextPerson();
+        Assert.AreEqual(timTurns, infinitePerson.Turns, "People with infinite turns should not have their turns parameter modified to a very big number. A very big number is not infinite.");
     }
 
     [TestMethod]
-    // Scenario: Person with 1 turn should not be re-added to queue.
-    // Expected Result: Person dequeued once and queue becomes empty.
-    // Test Result: Passed ✅
-    public void Person_With_One_Turn_Should_Be_Removed()
+    // Scenario: Try to get the next person from an empty queue
+    // Expected Result: Exception should be thrown with appropriate error message.
+    // Defect(s) Found: 
+    public void TestTakingTurnsQueue_Empty()
     {
-        var queue = new TakingTurnsQueue();
-        queue.AddPerson("Eve", 1);
+        var players = new TakingTurnsQueue();
 
-        var person = queue.GetNextPerson(); // Dequeued, not re-added
-
-        Assert.AreEqual("Eve", person.Name);
-        Assert.AreEqual(true, queue.ToString() == "[]"); // Empty queue
+        try
+        {
+            players.GetNextPerson();
+            Assert.Fail("Exception should have been thrown.");
+        }
+        catch (InvalidOperationException e)
+        {
+            Assert.AreEqual("No one in the queue.", e.Message);
+        }
+        catch (AssertFailedException)
+        {
+            throw;
+        }
+        catch (Exception e)
+        {
+            Assert.Fail(
+                 string.Format("Unexpected exception of type {0} caught: {1}",
+                                e.GetType(), e.Message)
+            );
+        }
     }
 }
