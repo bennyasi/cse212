@@ -14,4 +14,3 @@ public class Person
         return Turns <= 0 ? $"({Name}:Forever)" : $"({Name}:{Turns})";
     }
 }
-
