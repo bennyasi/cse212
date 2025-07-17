@@ -1,4 +1,6 @@
+using System.Runtime.InteropServices;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 
 public static class SetsAndMaps
 {
@@ -22,7 +24,26 @@ public static class SetsAndMaps
     public static string[] FindPairs(string[] words)
     {
         // TODO Problem 1 - ADD YOUR CODE HERE
-        return [];
+        var pairList = new HashSet<string>();
+        var result = new List<string>();
+
+        foreach (var word in words)
+        {
+            if (word[0] == word[1])
+                continue;
+            var reversed = new string(new[] { word[1], word[0] });
+
+            if (pairList.Contains(reversed))
+            {
+                result.Add($"{reversed} & {word}");
+            }
+            else
+            {
+                pairList.Add(word);
+            }
+        }
+
+        return result.ToArray();
     }
 
     /// <summary>
@@ -42,9 +63,17 @@ public static class SetsAndMaps
         foreach (var line in File.ReadLines(filename))
         {
             var fields = line.Split(",");
+            var degree = fields[3];
             // TODO Problem 2 - ADD YOUR CODE HERE
+            if (degrees.ContainsKey(degree))
+            {
+                degrees[degree] = degrees[degree] + 1;
+            }
+            else
+            {
+                degrees.Add(degree, 1);
+            }
         }
-
         return degrees;
     }
 
@@ -66,9 +95,47 @@ public static class SetsAndMaps
     /// </summary>
     public static bool IsAnagram(string word1, string word2)
     {
-        // TODO Problem 3 - ADD YOUR CODE HERE
-        return false;
+    var counts = new Dictionary<char, int>(capacity: 256);
+
+    // Count characters in word1
+    for (int i = 0; i < word1.Length; i++)
+    {
+        char c = word1[i];
+        if (char.IsWhiteSpace(c)) continue;
+
+        c = char.ToLowerInvariant(c);
+
+        if (counts.TryGetValue(c, out int count))
+            counts[c] = count + 1;
+        else
+            counts[c] = 1;
     }
+
+    // Subtract characters in word2
+    for (int i = 0; i < word2.Length; i++)
+    {
+        char c = word2[i];
+        if (char.IsWhiteSpace(c)) continue;
+
+        c = char.ToLowerInvariant(c);
+
+        if (counts.TryGetValue(c, out int count))
+        {
+            if (count == 1)
+                counts.Remove(c); // optimization: remove to shrink map
+            else
+                counts[c] = count - 1;
+        }
+        else
+        {
+            // more of a char in word2 than word1
+            return false;
+        }
+    }
+
+    // All counts should be balanced
+    return counts.Count == 0;
+}
 
     /// <summary>
     /// This function will read JSON (Javascript Object Notation) data from the 
